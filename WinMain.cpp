@@ -1,6 +1,8 @@
 #include <windows.h>
 #include <d2d1.h>
 
+#pragma comment (lib, "d2d1.lib")
+
 const wchar_t gClassName[] = L"MyWindowClass";
 
 // 1. Direct2D 蒲配府 积己
@@ -65,6 +67,18 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance,
         MessageBox(nullptr, L"Failed to create window class!", L"Error", MB_ICONEXCLAMATION | MB_OK);
         return 0;
     }
+    GetClientRect(hwnd, &wr);
+    hr = gpD2DFactory->CreateHwndRenderTarget(
+        D2D1::RenderTargetProperties(),
+        D2D1::HwndRenderTargetProperties(hwnd, D2D1::SizeU(wr.right - wr.left, wr.bottom - wr.top)),
+        &gpRenderTarget
+    );
+
+    if (FAILED(hr))
+    {
+        MessageBox(nullptr, L"Failed To Create HWNDRenderTarget", L"Error", MB_OK);
+        return 0;
+    }
 
     ShowWindow(hwnd, nShowCmd);
     UpdateWindow(hwnd);
@@ -76,6 +90,20 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance,
         DispatchMessage(&msg);
     }
 
+    // 秦力
+    if (gpRenderTarget != nullptr)
+    {
+        gpRenderTarget->Release();
+        gpRenderTarget = nullptr;
+    }
+    
+    if (gpD2DFactory != nullptr)
+    {
+        gpD2DFactory->Release();
+        gpD2DFactory = nullptr;
+    }
+  
+
     return static_cast<int>(msg.wParam);
 
 }
@@ -85,6 +113,10 @@ void OnPaint(HWND hwnd)
     HDC hdc;
     PAINTSTRUCT ps;
     hdc = BeginPaint(hwnd, &ps);
+
+    gpRenderTarget->BeginDraw();
+    gpRenderTarget->Clear(D2D1::ColorF(0.0f, 0.2f, 0.4f, 1.0f));
+    gpRenderTarget->EndDraw();
 
     EndPaint(hwnd, &ps);
 }
